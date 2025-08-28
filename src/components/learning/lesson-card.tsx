@@ -3,8 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Star, CheckCircle, Lock, Play } from 'lucide-react';
+import { Clock, Star, CheckCircle, Lock, Play, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface LessonCardProps {
   id: string;
@@ -35,6 +36,7 @@ const LessonCard = ({
   className,
   onClick 
 }: LessonCardProps) => {
+  const { toast } = useToast();
   const difficultyColors = {
     beginner: 'bg-success-light text-success border-success/20',
     intermediate: 'bg-warning-light text-warning border-warning/20',
@@ -73,6 +75,33 @@ const LessonCard = ({
   };
 
   const config = statusConfig[status];
+  const handleCardClick = () => {
+    if (config.disabled) return;
+    
+    // Show appropriate toast based on lesson status
+    if (status === 'available') {
+      toast({
+        title: "🚀 Lesson Started!",
+        description: `Starting "${title}" - Good luck on your learning journey!`,
+        duration: 3000,
+      });
+    } else if (status === 'in-progress') {
+      toast({
+        title: "📚 Continuing Lesson",
+        description: `Resuming "${title}" - You're ${Math.round(progress)}% complete!`,
+        duration: 3000,
+      });
+    } else if (status === 'completed') {
+      toast({
+        title: "📖 Reviewing Lesson",
+        description: `Opening "${title}" for review - You earned ${stars} stars!`,
+        duration: 3000,
+      });
+    }
+    
+    onClick?.();
+  };
+
   const Icon = config.icon;
 
   return (
@@ -82,7 +111,7 @@ const LessonCard = ({
         config.cardOpacity,
         className
       )}
-      onClick={!config.disabled ? onClick : undefined}
+      onClick={handleCardClick}
     >
       <CardContent className="p-6 space-y-4">
         {/* Header */}
@@ -151,6 +180,10 @@ const LessonCard = ({
             variant={config.buttonVariant}
             disabled={config.disabled}
             className="min-w-[100px]"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCardClick();
+            }}
           >
             <Icon className="w-4 h-4 mr-2" />
             {config.buttonText}

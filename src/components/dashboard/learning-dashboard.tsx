@@ -4,13 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LessonCard from '@/components/learning/lesson-card';
+import QuizModal from '@/components/learning/quiz-modal';
 import StatsOverview from '@/components/gamification/stats-overview';
 import Leaderboard from '@/components/gamification/leaderboard';
 import { BookOpen, Play, TrendingUp, Users, Filter } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const LearningDashboard = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
-
+  const [quizModalOpen, setQuizModalOpen] = useState(false);
+  const [currentQuizLesson, setCurrentQuizLesson] = useState<any>(null);
+  const { toast } = useToast();
   // Mock data - in real app this would come from API/database
   const userStats = {
     level: 12,
@@ -154,9 +158,90 @@ const LearningDashboard = () => {
     ? lessons 
     : lessons.filter(lesson => lesson.category === selectedCategory);
 
+  // Mock quiz questions
+  const sampleQuizQuestions = [
+    {
+      id: '1',
+      question: 'What is the correct way to define a functional component in React?',
+      options: [
+        'function MyComponent() { return <div>Hello</div>; }',
+        'const MyComponent = () => { return <div>Hello</div>; }',
+        'Both A and B are correct',
+        'class MyComponent extends Component'
+      ],
+      correctAnswer: 2,
+      explanation: 'Both function declarations and arrow functions are valid ways to create functional components.'
+    },
+    {
+      id: '2',
+      question: 'Which hook is used for managing component state?',
+      options: ['useEffect', 'useState', 'useContext', 'useReducer'],
+      correctAnswer: 1,
+      explanation: 'useState is the primary hook for managing local component state.'
+    },
+    {
+      id: '3',
+      question: 'What does JSX stand for?',
+      options: ['JavaScript XML', 'JavaScript eXtension', 'Java Syntax Extension', 'JSON XML'],
+      correctAnswer: 0,
+      explanation: 'JSX stands for JavaScript XML and allows you to write HTML-like syntax in JavaScript.'
+    }
+  ];
+
   const handleLessonClick = (lessonId: string) => {
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (!lesson) return;
+
+    // Simulate lesson completion and show quiz
+    if (lesson.status === 'available' || lesson.status === 'in-progress') {
+      setTimeout(() => {
+        toast({
+          title: "🎯 Ready for Quiz!",
+          description: `Complete the quiz to finish "${lesson.title}" and earn XP!`,
+          duration: 4000,
+        });
+        setCurrentQuizLesson(lesson);
+        setQuizModalOpen(true);
+      }, 2000);
+    }
+
     console.log('Starting lesson:', lessonId);
-    // In real app: navigate to lesson page or open lesson modal
+  };
+
+  const handleQuizComplete = (score: number, earnedStars: number) => {
+    if (!currentQuizLesson) return;
+    
+    // Show achievement notifications based on performance
+    setTimeout(() => {
+      if (score >= 90) {
+        toast({
+          title: "🌟 Outstanding Performance!",
+          description: "You've mastered this topic! Keep up the excellent work!",
+          duration: 5000,
+        });
+      } else if (score >= 70) {
+        toast({
+          title: "👍 Great Job!",
+          description: "Good understanding! Consider reviewing for perfection.",
+          duration: 4000,
+        });
+      } else if (score >= 50) {
+        toast({
+          title: "📚 Keep Learning!",
+          description: "You're on the right track. Review the material and try again!",
+          duration: 4000,
+        });
+      }
+    }, 500);
+
+    // Show streak notification if maintaining streak
+    setTimeout(() => {
+      toast({
+        title: "🔥 Streak Maintained!",
+        description: "7 day learning streak - You're on fire!",
+        duration: 3000,
+      });
+    }, 1500);
   };
 
   return (
@@ -258,6 +343,16 @@ const LearningDashboard = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Quiz Modal */}
+      <QuizModal
+        isOpen={quizModalOpen}
+        onClose={() => setQuizModalOpen(false)}
+        lessonTitle={currentQuizLesson?.title || ''}
+        questions={sampleQuizQuestions}
+        xpReward={currentQuizLesson?.xpReward || 0}
+        onComplete={handleQuizComplete}
+      />
     </div>
   );
 };
