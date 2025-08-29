@@ -1,8 +1,13 @@
 import React from 'react';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
+import { useWallet } from "@/hooks/use-wallet";
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from "@/components/ui/badge";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ProgressRing from '@/components/ui/progress-ring';
-import { Flame, Coins, Menu, Bell } from 'lucide-react';
+import { Flame, Coins, Menu, Bell, User, LogOut, Wallet, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -18,8 +23,12 @@ interface HeaderProps {
 }
 
 const Header = ({ user }: HeaderProps) => {
+  const navigate = useNavigate();
+  const { user: authUser, signOut, userRole } = useAuth();
+  const { account } = useWallet();
+  
   const defaultUser = {
-    name: 'Alex Thompson',
+    name: authUser?.email?.split('@')[0] || "User",
     avatar: undefined,
     level: 12,
     xp: 2840,
@@ -31,6 +40,11 @@ const Header = ({ user }: HeaderProps) => {
   const currentUser = user || defaultUser;
   const xpProgress = (currentUser.xp / currentUser.maxXp) * 100;
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between px-4">
@@ -39,7 +53,7 @@ const Header = ({ user }: HeaderProps) => {
           <Button variant="ghost" size="icon" className="md:hidden">
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate('/')}>
             <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">L</span>
             </div>
@@ -49,6 +63,22 @@ const Header = ({ user }: HeaderProps) => {
 
         {/* Right side - User info */}
         <div className="flex items-center space-x-4">
+          {/* Role Badge */}
+          {userRole && (
+            <Badge variant={userRole === 'admin' ? 'default' : 'secondary'} className="hidden sm:flex">
+              {userRole === 'admin' ? <Crown className="w-3 h-3 mr-1" /> : <User className="w-3 h-3 mr-1" />}
+              {userRole.toUpperCase()}
+            </Badge>
+          )}
+
+          {/* Wallet Status */}
+          {account && (
+            <div className="hidden sm:flex items-center space-x-2 bg-gradient-card rounded-lg px-3 py-2">
+              <Wallet className="w-4 h-4 text-green-500" />
+              <span className="text-xs font-mono">{account.slice(0, 6)}...{account.slice(-4)}</span>
+            </div>
+          )}
+
           {/* Streak */}
           <div className="hidden sm:flex items-center space-x-2 bg-gradient-card rounded-lg px-3 py-2">
             <Flame className="w-5 h-5 text-streak" />
@@ -80,13 +110,30 @@ const Header = ({ user }: HeaderProps) => {
             <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"></span>
           </Button>
 
-          {/* User Avatar */}
-          <Avatar className="w-8 h-8">
-            <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-              {currentUser.name.split(' ').map(n => n[0]).join('')}
-            </AvatarFallback>
-          </Avatar>
+          {/* User Avatar with Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={currentUser.avatar} alt={currentUser.name} />
+                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
+                    {currentUser.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
