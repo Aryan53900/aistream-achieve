@@ -7,7 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import ProgressRing from '@/components/ui/progress-ring';
-import { Flame, Coins, Menu, Bell, User, LogOut, Wallet, Crown } from 'lucide-react';
+import { Flame, Coins, Menu, Bell, User, LogOut, Wallet, Crown, Settings } from 'lucide-react';
+import { NotificationCenter } from '../notifications/notification-center';
 import { cn } from '@/lib/utils';
 
 interface HeaderProps {
@@ -25,7 +26,7 @@ interface HeaderProps {
 const Header = ({ user }: HeaderProps) => {
   const navigate = useNavigate();
   const { user: authUser, signOut, userRole } = useAuth();
-  const { account } = useWallet();
+  const { account, disconnectWallet } = useWallet();
   
   const defaultUser = {
     name: authUser?.email?.split('@')[0] || "User",
@@ -105,10 +106,7 @@ const Header = ({ user }: HeaderProps) => {
           </div>
 
           {/* Notifications */}
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full"></span>
-          </Button>
+          <NotificationCenter />
 
           {/* User Avatar with Dropdown */}
           <DropdownMenu>
@@ -122,11 +120,23 @@ const Header = ({ user }: HeaderProps) => {
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent className="w-56 bg-background border shadow-lg" align="end" forceMount>
               <DropdownMenuItem onClick={() => navigate('/profile')}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
+              {userRole === 'admin' && (
+                <DropdownMenuItem onClick={() => navigate('/admin')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Admin Dashboard</span>
+                </DropdownMenuItem>
+              )}
+              {account && (
+                <DropdownMenuItem onClick={disconnectWallet}>
+                  <Wallet className="mr-2 h-4 w-4" />
+                  <span>Disconnect Wallet</span>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />
